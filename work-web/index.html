@@ -583,11 +583,34 @@
 
     function checkAuth() {
       const user = localStorage.getItem('workAuth_user');
-      if (user) {
-        showApp();
-      } else {
+      if (!user) {
         document.getElementById('authModal').classList.add('active');
+        return;
       }
+      // Show cached state instantly — no flash of the login screen.
+      showApp();
+      // Then quietly refresh the real profile (level_num, name...) from the
+      // backend. Without this, a device that was already signed in before a
+      // level/role changed (or before a module like Admin Dashboard was
+      // added) stays stuck on whatever was cached at the LAST real
+      // username/password login — same root cause as the task-refresh issue,
+      // just for the profile instead of the data.
+      refreshOwnProfile();
+    }
+
+    async function refreshOwnProfile() {
+      const token = localStorage.getItem('workAuth_token');
+      const backend = backendURL();
+      if (!token || !backend) return;
+      try {
+        const resp = await fetch(`${backend}/api/work/session?token=${encodeURIComponent(token)}`);
+        if (!resp.ok) return; // expired/invalid — keep working on cached state, offline-safe
+        const profile = await resp.json();
+        localStorage.setItem('workLevelNum', profile.level_num || 0);
+        localStorage.setItem('workDisplayName', profile.name || localStorage.getItem('workDisplayName') || '');
+        if (profile.employee_id) localStorage.setItem('workEmployeeID', profile.employee_id);
+        applyLevelGating();
+      } catch {}
     }
 
     function handleLogout() {
