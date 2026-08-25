@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Innotek Work App — Trial. Stages 0–4: My Day, Self-Report, Diary, Leave, Assign.">
-  <title>Innotek Work — Trial</title>
+  <meta name="description" content="Innotek ERP WorkApp — trial. My Day, Self-Report, Diary, Leave, Assign.">
+  <title>Innotek ERP WorkApp</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
@@ -19,10 +19,10 @@
 
     .auth-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8);
                   display: none; justify-content: center; align-items: center;
-                  z-index: 10000; }
+                  z-index: 10000; padding: 16px; }
     .auth-modal.active { display: flex; }
     .auth-box { background: #1d2e3f; padding: 32px; border-radius: 8px;
-                border: 1px solid #2a3f54; width: 100%; max-width: 360px; }
+                border: 1px solid #2a3f54; width: 100%; max-width: 380px; }
     .auth-box h1 { font-size: 20px; margin-bottom: 4px; color: #00c2ff; }
     .auth-box .subtitle { color: #7a9bb5; font-size: 12px; margin-bottom: 20px; }
     .auth-box input { width: 100%; padding: 10px 12px; background: #0f1923;
@@ -33,29 +33,31 @@
                        color: #0f1923; font-weight: 700; border: none;
                        border-radius: 4px; cursor: pointer; font-size: 14px; }
     .auth-box button:hover { background: #00d4ff; }
-    .auth-error { color: #ff5270; font-size: 12px; margin-top: 8px; }
+    .auth-box button:disabled { opacity: 0.6; cursor: wait; }
+    .auth-error { color: #ff5270; font-size: 12px; margin-top: 8px; white-space: pre-wrap; }
+    .auth-hint { margin-top: 12px; font-size: 11px; color: #7a9bb5; line-height: 1.5; }
 
-    .app-shell { flex: 1; display: flex; flex-direction: column; }
+    .app-shell { flex: 1; display: flex; flex-direction: column; min-height: 0; }
     .header { background: #1d2e3f; border-bottom: 2px solid #C9A227; padding: 12px 16px; }
     .header h1 { font-size: 18px; color: #00c2ff; }
     .header .tagline { font-size: 10px; color: #C9A227; text-transform: uppercase;
                        letter-spacing: 1px; margin-top: 2px; }
 
     .toolbar { background: #162230; border-bottom: 1px solid #2a3f54; padding: 8px 16px;
-               display: flex; gap: 8px; align-items: center; font-size: 12px; }
+               display: flex; gap: 8px; align-items: center; font-size: 12px; flex-wrap: wrap; }
     .toolbar button { padding: 6px 12px; background: #00c2ff; color: #0f1923;
                       border: none; border-radius: 3px; cursor: pointer; font-weight: 600;
                       font-size: 11px; }
     .toolbar button:hover { background: #00d4ff; }
-    .toolbar .status { color: #7a9bb5; flex: 1; }
-    .toolbar .spinner { display: inline-block; width: 8px; height: 8px;
-                        background: #00e8a2; border-radius: 50%; animation: pulse 1s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+    .toolbar button:disabled { opacity: 0.6; cursor: wait; }
+    .toolbar .status { color: #7a9bb5; }
+    .toolbar .spacer { flex: 1; }
 
-    .tab-bar { display: flex; border-bottom: 1px solid #2a3f54; background: #162230; }
-    .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer;
-           border-bottom: 3px solid transparent; font-size: 13px; font-weight: 600;
-           color: #7a9bb5; transition: all 0.2s; }
+    .tab-bar { display: flex; border-bottom: 1px solid #2a3f54; background: #162230;
+               overflow-x: auto; }
+    .tab { flex: 1; min-width: 70px; padding: 12px 6px; text-align: center; cursor: pointer;
+           border-bottom: 3px solid transparent; font-size: 12px; font-weight: 600;
+           color: #7a9bb5; transition: all 0.2s; white-space: nowrap; }
     .tab:hover { color: #00c2ff; }
     .tab.active { color: #00c2ff; border-bottom-color: #00c2ff; background: #0f1923; }
 
@@ -77,6 +79,10 @@
     .badge.standing { background: #00e8a2; }
     .badge.today { background: #f59e0b; }
     .badge.week { background: #8b5cf6; }
+    .badge.pending { background: #7a9bb5; color: #0f1923; }
+    .badge.matched { background: #00e8a2; }
+    .badge.partial { background: #f59e0b; }
+    .badge.needs_review { background: #ff5270; }
 
     .form-group { margin-bottom: 16px; }
     .form-group label { display: block; font-size: 12px; font-weight: 600;
@@ -86,9 +92,16 @@
       color: #e8f4fd; border-radius: 4px; font-size: 13px; font-family: inherit; }
     .form-group textarea { resize: vertical; min-height: 80px; }
     .form-group input::placeholder, .form-group textarea::placeholder { color: #5a7f9b; }
+    .form-row { display: flex; gap: 10px; }
+    .form-row .form-group { flex: 1; }
+    .reading-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .reading-row input { flex: 1; }
+    .reading-row button { padding: 8px 10px; background: #ff5270; color: #fff;
+                          border: none; border-radius: 4px; cursor: pointer; }
 
     .btn { padding: 10px 14px; border: none; border-radius: 4px; cursor: pointer;
            font-weight: 600; font-size: 12px; transition: all 0.2s; }
+    .btn:disabled { opacity: 0.6; cursor: wait; }
     .btn-primary { background: #00c2ff; color: #0f1923; }
     .btn-primary:hover { background: #00d4ff; }
     .btn-secondary { background: #2a3f54; color: #00c2ff; }
@@ -97,18 +110,15 @@
     .btn-danger { background: #ff5270; color: #fff; }
     .btn-sm { padding: 6px 10px; font-size: 11px; }
 
-    .list { list-style: none; }
-    .list-item { padding: 10px 0; border-bottom: 1px solid #2a3f54; font-size: 13px; }
-    .list-item:last-child { border-bottom: none; }
-
     .empty { text-align: center; color: #5a7f9b; padding: 20px; font-size: 13px; }
-    .alert { padding: 12px; border-radius: 4px; margin-bottom: 12px; font-size: 12px; }
+    .alert { padding: 12px; border-radius: 4px; margin-bottom: 12px; font-size: 12px;
+             white-space: pre-wrap; }
     .alert-info { background: rgba(0,194,255,0.1); border-left: 3px solid #00c2ff; color: #00c2ff; }
     .alert-success { background: rgba(0,232,162,0.1); border-left: 3px solid #00e8a2; color: #00e8a2; }
     .alert-warning { background: rgba(245,158,11,0.1); border-left: 3px solid #f59e0b; color: #f59e0b; }
     .alert-error { background: rgba(255,82,112,0.1); border-left: 3px solid #ff5270; color: #ff5270; }
 
-    .settings-panel { position: fixed; right: -320px; top: 0; width: 320px;
+    .settings-panel { position: fixed; right: -320px; top: 0; width: 320px; max-width: 90vw;
                       height: 100%; background: #1d2e3f; border-left: 1px solid #2a3f54;
                       transition: right 0.3s; z-index: 100; overflow-y: auto; }
     .settings-panel.open { right: 0; }
@@ -116,11 +126,13 @@
                       border: none; color: #00c2ff; cursor: pointer; font-size: 18px; }
     .settings-content { padding: 20px; }
     .settings-content .form-group { margin-bottom: 20px; }
+    .settings-note { font-size: 11px; color: #7a9bb5; line-height: 1.6; background: #162230;
+                     border: 1px solid #2a3f54; border-radius: 4px; padding: 10px; margin-bottom: 16px; }
 
     @media (max-width: 600px) {
-      .tab { font-size: 11px; padding: 10px 8px; }
+      .tab { font-size: 10px; padding: 10px 4px; }
       .header h1 { font-size: 16px; }
-      .auth-box { max-width: 90%; }
+      .auth-box { max-width: 100%; }
     }
   </style>
 </head>
@@ -130,14 +142,26 @@
   <!-- Auth Modal -->
   <div class="auth-modal" id="authModal">
     <div class="auth-box">
-      <h1>Innotek Work</h1>
+      <h1>Innotek ERP WorkApp</h1>
       <div class="subtitle">Sign in with your App Control account</div>
+
+      <div id="preLoginBackend">
+        <div class="form-group" style="margin-bottom: 8px;">
+          <label style="font-size: 11px;">Backend URL (ask your admin)</label>
+          <input type="text" id="preBackendURL" placeholder="http://192.168.1.50:8000">
+        </div>
+      </div>
+
       <input type="text" id="authUsername" placeholder="Username" autocomplete="username">
       <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password">
-      <button onclick="handleAuth()">Sign In</button>
+      <button id="authBtn" onclick="handleAuth()">Sign In</button>
       <div id="authError" class="auth-error"></div>
-      <div style="margin-top: 12px; font-size: 11px; color: #7a9bb5;">
-        💡 Use your App Control credentials. If this is your first login, use the initial password set by your admin.
+      <div class="auth-hint">
+        First login? Use the password your admin issued in App Control — you'll be asked to set your own right after.
+        <br><br>
+        If this page loaded over <strong>https://</strong> (e.g. GitHub Pages) and your Backend URL
+        is <strong>http://</strong>, the browser will block the connection — open the app directly
+        at the backend's own address instead.
       </div>
     </div>
   </div>
@@ -145,11 +169,11 @@
   <!-- Change Password Modal (first login) -->
   <div class="auth-modal" id="changePasswordModal">
     <div class="auth-box">
-      <h1>Change Password</h1>
-      <div class="subtitle">First login — please set a new password</div>
-      <input type="password" id="newPassword" placeholder="New password" autocomplete="new-password">
+      <h1>Set Your Password</h1>
+      <div class="subtitle">First login — choose a password only you know</div>
+      <input type="password" id="newPassword" placeholder="New password (min 6 chars)" autocomplete="new-password">
       <input type="password" id="confirmPassword" placeholder="Confirm password" autocomplete="new-password">
-      <button onclick="handleChangePassword()">Set Password</button>
+      <button id="changePassBtn" onclick="handleChangePassword()">Set Password</button>
       <div id="changePassError" class="auth-error"></div>
     </div>
   </div>
@@ -157,24 +181,26 @@
   <!-- Main App -->
   <div class="app-shell" id="appShell" style="display: none;">
     <div class="header">
-      <h1>Innotek<span style="color: #00c2ff;">tek</span> Work — Trial</h1>
-      <div class="tagline">Provable Consistency · Stages 0–4</div>
+      <h1>Innotek ERP <span style="color: #00c2ff;">WorkApp</span></h1>
+      <div class="tagline">Provable Consistency · Trial</div>
     </div>
 
     <div class="toolbar">
-      <button onclick="syncToBackend()">📤 Sync to Backend</button>
-      <button onclick="refreshFromBackend()">⬇️ Refresh from Backend</button>
-      <span class="status"><span id="syncStatus">Ready</span></span>
+      <button onclick="syncToBackend()" id="syncBtn">📤 Sync</button>
+      <button onclick="refreshFromBackend()" id="refreshBtn">⬇️ Refresh</button>
+      <span class="status" id="syncStatus">Ready</span>
+      <span class="status" id="queueStatus"></span>
+      <div class="spacer"></div>
       <button onclick="toggleSettings()" style="background: #2a3f54; color: #00c2ff;">⚙️</button>
       <button onclick="handleLogout()" style="background: #2a3f54; color: #00c2ff;">🚪</button>
     </div>
 
     <div class="tab-bar">
-      <div class="tab active" onclick="switchTab('myDay')">📅 My Day</div>
-      <div class="tab" onclick="switchTab('report')">📝 Self-Report</div>
-      <div class="tab" onclick="switchTab('diary')">📓 Diary</div>
-      <div class="tab" onclick="switchTab('leave')">🏖️ Leave</div>
-      <div class="tab" onclick="switchTab('assign')">✋ Assign</div>
+      <div class="tab active" data-tab="myDay" onclick="switchTab('myDay')">📅 My Day</div>
+      <div class="tab" data-tab="report" onclick="switchTab('report')">📝 Report</div>
+      <div class="tab" data-tab="diary" onclick="switchTab('diary')">📓 Diary</div>
+      <div class="tab" data-tab="leave" onclick="switchTab('leave')">🏖️ Leave</div>
+      <div class="tab" data-tab="assign" onclick="switchTab('assign')">✋ Assign</div>
     </div>
 
     <div class="content">
@@ -182,11 +208,7 @@
       <div class="tab-content active" id="myDay">
         <div class="section">
           <div class="section-title">Your Stations Today</div>
-          <div id="myDayList" class="empty">Loading your assignments...</div>
-        </div>
-        <div class="section">
-          <div class="section-title">Station Facts Feed</div>
-          <div id="factsFeed" class="empty">No facts recorded yet.</div>
+          <div id="myDayList" class="empty">Loading… hit ⬇️ Refresh if this doesn't update.</div>
         </div>
       </div>
 
@@ -196,16 +218,15 @@
           <div class="section-title">Daily Self-Report</div>
           <div id="reportStatus" class="alert alert-info" style="display: none;"></div>
 
-          <div class="form-group">
-            <label>Report Date</label>
-            <input type="date" id="reportDate">
-          </div>
-
-          <div class="form-group">
-            <label>Station</label>
-            <select id="reportStation">
-              <option value="">Select a station...</option>
-            </select>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Report Date</label>
+              <input type="date" id="reportDate">
+            </div>
+            <div class="form-group">
+              <label>Station Code</label>
+              <input type="text" id="reportStation" placeholder="e.g. PRE-CB1">
+            </div>
           </div>
 
           <div class="form-group">
@@ -214,8 +235,9 @@
           </div>
 
           <div class="form-group">
-            <label>Readings (JSON array)</label>
-            <textarea id="reportReadings" placeholder='[{"label": "pH", "value": 7.2}]'></textarea>
+            <label>Readings</label>
+            <div id="readingRows"></div>
+            <button class="btn btn-secondary btn-sm" onclick="addReadingRow()">+ Add reading</button>
           </div>
 
           <div class="form-group">
@@ -230,8 +252,8 @@
         </div>
 
         <div class="section">
-          <div class="section-title">Submitted Reports</div>
-          <div id="submittedReports" class="empty">No submitted reports yet.</div>
+          <div class="section-title">Submitted / Draft Reports (this device)</div>
+          <div id="submittedReports" class="empty">No reports yet.</div>
         </div>
       </div>
 
@@ -247,25 +269,15 @@
           </div>
 
           <div class="form-group">
-            <label>Raw Entry (free text)</label>
-            <textarea id="diaryText" placeholder="Write freely. Parser will extract batch #, measurements..."></textarea>
+            <label>Free-text Entry</label>
+            <textarea id="diaryText" placeholder="e.g. Batch NEGIN9980200NPH — POST_CB=7.2, temp=85, moisture=1.1"></textarea>
           </div>
 
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-primary" onclick="autosaveDiary()">💾 Save Draft</button>
-            <button class="btn btn-success" onclick="submitDiary()">✓ Submit & Parse</button>
-          </div>
-
-          <div id="diaryParsePreview" style="margin-top: 12px; display: none;">
-            <div class="alert alert-info">
-              <strong>Parse Preview:</strong>
-              <div id="diaryPreviewText" style="margin-top: 6px; font-size: 12px; white-space: pre-wrap;"></div>
-            </div>
-          </div>
+          <button class="btn btn-success" onclick="submitDiary()">✓ Submit &amp; Parse</button>
         </div>
 
         <div class="section">
-          <div class="section-title">My Diary Entries</div>
+          <div class="section-title">My Diary Entries (this device)</div>
           <div id="diaryList" class="empty">No diary entries yet.</div>
         </div>
       </div>
@@ -277,55 +289,52 @@
           <div id="leaveStatus" class="alert alert-info" style="display: none;"></div>
 
           <div class="form-group">
-            <label>Start Date</label>
-            <input type="date" id="leaveStart">
+            <label>Leave Type</label>
+            <select id="leaveType"><option value="">Loading types… (hit ⬇️ Refresh)</option></select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>From Date</label>
+              <input type="date" id="leaveFrom">
+            </div>
+            <div class="form-group">
+              <label>To Date</label>
+              <input type="date" id="leaveTo">
+            </div>
           </div>
 
           <div class="form-group">
-            <label>End Date</label>
-            <input type="date" id="leaveEnd">
+            <label><input type="checkbox" id="leaveHalfDay" style="width:auto;display:inline-block;margin-right:6px;">Half day</label>
           </div>
 
           <div class="form-group">
-            <label>Reason</label>
-            <select id="leaveReason">
-              <option value="">Select reason...</option>
-              <option value="sick">Sick Leave</option>
-              <option value="personal">Personal</option>
-              <option value="casual">Casual</option>
-              <option value="other">Other</option>
-            </select>
+            <label>Reason (required)</label>
+            <textarea id="leaveReason" placeholder="Brief reason..."></textarea>
           </div>
 
-          <div class="form-group">
-            <label>Notes</label>
-            <textarea id="leaveNotes" placeholder="Any additional notes..."></textarea>
-          </div>
-
-          <button class="btn btn-primary" onclick="requestLeave()" style="width: 100%;">🏖️ Request Leave</button>
+          <button class="btn btn-primary" onclick="requestLeave()" style="width: 100%;">🏖️ Submit Request</button>
         </div>
 
         <div class="section">
           <div class="section-title">My Leave Requests</div>
-          <div id="leaveList" class="empty">No leave requests yet.</div>
+          <div id="leaveList" class="empty">Hit ⬇️ Refresh to load.</div>
         </div>
       </div>
 
       <!-- Assign Tab -->
       <div class="tab-content" id="assign">
         <div class="section">
-          <div class="section-title">Assign Task</div>
+          <div class="section-title">Assign a Task</div>
           <div id="assignStatus" class="alert alert-info" style="display: none;"></div>
 
           <div class="form-group">
-            <label>Assign To</label>
-            <select id="assignTo">
-              <option value="">Select team member...</option>
-            </select>
+            <label>Assign To (Employee ID)</label>
+            <select id="assignTo"><option value="">Loading team… (hit ⬇️ Refresh)</option></select>
           </div>
 
           <div class="form-group">
-            <label>Task Title</label>
+            <label>Title</label>
             <input type="text" id="assignTitle" placeholder="What needs to be done?">
           </div>
 
@@ -334,12 +343,21 @@
             <textarea id="assignDesc" placeholder="Task details..."></textarea>
           </div>
 
+          <div class="form-group">
+            <label>Priority</label>
+            <select id="assignPriority">
+              <option value="normal">Normal</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
+
           <button class="btn btn-primary" onclick="createAssignment()" style="width: 100%;">➕ Assign</button>
         </div>
 
         <div class="section">
-          <div class="section-title">My Assigned Tasks</div>
-          <div id="taskList" class="empty">No tasks assigned to you.</div>
+          <div class="section-title">Tasks Assigned To Me</div>
+          <div id="taskList" class="empty">Hit ⬇️ Refresh to load.</div>
         </div>
       </div>
     </div>
@@ -351,142 +369,166 @@
     <div class="settings-content">
       <h2 style="margin-bottom: 16px; color: #00c2ff;">Settings</h2>
 
+      <div class="settings-note">
+        <strong>Backend URL</strong> must be reachable from this device, on the SAME network
+        as the laptop running it (office/factory WiFi), e.g. <code>http://192.168.1.50:8000</code>.
+        <br><br>
+        If this page was opened from an <strong>https://</strong> link (GitHub Pages), your
+        browser will block a plain <strong>http://</strong> backend for security — Sync/Refresh
+        will fail even though the app itself still works offline. In that case, open the app
+        directly at your backend's own address instead (ask your admin for it) so both match.
+      </div>
+
       <div class="form-group">
         <label>Backend URL</label>
         <input type="text" id="backendURL" placeholder="http://192.168.1.50:8000">
       </div>
 
       <div class="form-group">
-        <label>Employee ID (from backend)</label>
-        <input type="text" id="employeeID" placeholder="Your ID">
+        <label>Employee ID</label>
+        <input type="text" id="employeeID" placeholder="Set automatically after login" readonly>
       </div>
 
       <div class="form-group">
         <label>Display Name</label>
-        <input type="text" id="displayName" placeholder="Your name">
+        <input type="text" id="displayName" placeholder="Set automatically after login" readonly>
       </div>
 
-      <button class="btn btn-primary" onclick="saveSettings()" style="width: 100%; margin-bottom: 8px;">Save Settings</button>
+      <button class="btn btn-primary" onclick="saveSettings()" style="width: 100%; margin-bottom: 8px;">Save Backend URL</button>
 
       <hr style="border: none; border-top: 1px solid #2a3f54; margin: 16px 0;">
 
       <h3 style="color: #C9A227; font-size: 12px; margin-bottom: 8px; text-transform: uppercase;">Storage</h3>
-      <button class="btn btn-secondary" onclick="exportData()" style="width: 100%; margin-bottom: 8px; font-size: 11px;">📥 Export Data</button>
+      <button class="btn btn-secondary" onclick="exportData()" style="width: 100%; margin-bottom: 8px; font-size: 11px;">📥 Export Local Data</button>
       <button class="btn btn-danger" onclick="clearAllData()" style="width: 100%; font-size: 11px;">🗑️ Clear Local Data</button>
-
-      <div style="margin-top: 20px; font-size: 11px; color: #5a7f9b; line-height: 1.6;">
-        <strong>Storage Status:</strong><br>
-        <span id="storageInfo">Checking...</span>
-      </div>
     </div>
   </div>
 
   <script>
+    // ===== CONFIG =====
+    function backendURL() {
+      return localStorage.getItem('workBackendURL') || '';
+    }
+
+    function apiHint(backend) {
+      try {
+        const pageIsHttps = window.location.protocol === 'https:';
+        const backendIsHttp = new URL(backend).protocol === 'http:';
+        if (pageIsHttps && backendIsHttp) {
+          return '\n\nThis page loaded over HTTPS but the Backend URL is HTTP — browsers ' +
+                 'block that combination. Open this app from your backend\'s own address instead.';
+        }
+      } catch {}
+      return '';
+    }
+
     // ===== AUTH & SESSION =====
     async function handleAuth() {
       const username = document.getElementById('authUsername').value.trim();
       const password = document.getElementById('authPassword').value;
-      const backendURL = localStorage.getItem('workBackendURL') || 'http://192.168.1.50:8000';
+      const preUrl = document.getElementById('preBackendURL').value.trim().replace(/\/$/, '');
+      if (preUrl) localStorage.setItem('workBackendURL', preUrl);
+      const backend = backendURL();
+      const btn = document.getElementById('authBtn');
 
+      if (!backend) {
+        document.getElementById('authError').textContent = 'Enter the Backend URL above first (ask your admin).';
+        return;
+      }
       if (!username || !password) {
         document.getElementById('authError').textContent = 'Enter username and password';
         return;
       }
 
       document.getElementById('authError').textContent = '';
+      btn.disabled = true;
 
       try {
-        // Call backend /api/work/login to validate against app_users table
-        const resp = await fetch(`${backendURL}/api/work/login`, {
+        const resp = await fetch(`${backend}/api/work/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password }),
         });
 
+        const data = await resp.json().catch(() => ({}));
+
         if (!resp.ok) {
-          const errData = await resp.json().catch(() => ({}));
-          document.getElementById('authError').textContent = errData.detail || 'Login failed';
+          document.getElementById('authError').textContent = data.detail || `Login failed (${resp.status})`;
           return;
         }
 
-        const data = await resp.json();
-
-        // Store session info from backend
-        localStorage.setItem('workAuth_user', username);
-        localStorage.setItem('workAuth_token', data.token || btoa(username + ':' + Date.now()));
+        localStorage.setItem('workAuth_user', data.username || username);
+        localStorage.setItem('workAuth_token', data.token || '');
         localStorage.setItem('workEmployeeID', data.employee_id || '');
-        localStorage.setItem('workDisplayName', data.employee_name || username);
+        localStorage.setItem('workDisplayName', data.name || username);
 
-        // Check if password needs to be changed (first login)
-        if (data.needs_password_change) {
+        if (data.must_change_password) {
           document.getElementById('authModal').classList.remove('active');
           document.getElementById('changePasswordModal').classList.add('active');
         } else {
           showApp();
         }
       } catch (e) {
-        document.getElementById('authError').textContent = 'Connection error: ' + e.message + '\n(Backend may be offline. Check Settings for Backend URL.)';
+        document.getElementById('authError').textContent =
+          `Cannot reach ${backend}\n\nCheck: backend running? same WiFi? correct address?` +
+          apiHint(backend) + `\n\n(${e.message})`;
+      } finally {
+        btn.disabled = false;
       }
     }
 
     async function handleChangePassword() {
       const newPass = document.getElementById('newPassword').value;
-      const confirm = document.getElementById('confirmPassword').value;
-      const username = document.getElementById('authUsername').value.trim();
-      const backendURL = localStorage.getItem('workBackendURL') || 'http://192.168.1.50:8000';
+      const confirmPass = document.getElementById('confirmPassword').value;
+      const username = localStorage.getItem('workAuth_user');
+      const backend = backendURL();
+      const btn = document.getElementById('changePassBtn');
 
-      if (!newPass || !confirm) {
+      if (!newPass || !confirmPass) {
         document.getElementById('changePassError').textContent = 'Enter both passwords';
         return;
       }
-
-      if (newPass !== confirm) {
+      if (newPass !== confirmPass) {
         document.getElementById('changePassError').textContent = 'Passwords do not match';
         return;
       }
-
       if (newPass.length < 6) {
         document.getElementById('changePassError').textContent = 'Password must be at least 6 characters';
         return;
       }
 
+      btn.disabled = true;
       try {
-        const resp = await fetch(`${backendURL}/api/work/change-password`, {
+        const resp = await fetch(`${backend}/api/work/password`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username,
-            new_password: newPass,
-            token: localStorage.getItem('workAuth_token'),
-          }),
+          body: JSON.stringify({ username, new_password: newPass }),
         });
-
+        const data = await resp.json().catch(() => ({}));
         if (!resp.ok) {
-          const errData = await resp.json().catch(() => ({}));
-          document.getElementById('changePassError').textContent = errData.detail || 'Failed to change password';
+          document.getElementById('changePassError').textContent = data.detail || 'Failed to change password';
           return;
         }
-
         document.getElementById('changePasswordModal').classList.remove('active');
         showApp();
       } catch (e) {
         document.getElementById('changePassError').textContent = 'Error: ' + e.message;
+      } finally {
+        btn.disabled = false;
       }
     }
 
     function checkAuth() {
       const user = localStorage.getItem('workAuth_user');
       if (user) {
-        document.getElementById('authModal').classList.remove('active');
-        document.getElementById('appShell').style.display = 'flex';
-        loadUserSettings();
+        showApp();
       } else {
         document.getElementById('authModal').classList.add('active');
       }
     }
 
     function handleLogout() {
-      if (confirm('Sign out?')) {
+      if (confirm('Sign out? (Local data on this device is kept.)')) {
         localStorage.removeItem('workAuth_user');
         localStorage.removeItem('workAuth_token');
         location.reload();
@@ -495,13 +537,16 @@
 
     function showApp() {
       document.getElementById('authModal').classList.remove('active');
+      document.getElementById('changePasswordModal').classList.remove('active');
       document.getElementById('appShell').style.display = 'flex';
       loadUserSettings();
-      loadMyDay();
-      loadReports();
-      loadTasks();
-      loadLeaveRequests();
-      updateStorageInfo();
+      renderMyDay();
+      renderReports();
+      renderDiary();
+      renderLeaves();
+      renderTasks();
+      updateQueueStatus();
+      if (document.getElementById('readingRows').children.length === 0) addReadingRow();
     }
 
     // ===== SETTINGS =====
@@ -510,20 +555,18 @@
     }
 
     function loadUserSettings() {
-      document.getElementById('backendURL').value = localStorage.getItem('workBackendURL') || 'http://192.168.1.50:8000';
+      document.getElementById('backendURL').value = backendURL();
       document.getElementById('employeeID').value = localStorage.getItem('workEmployeeID') || '';
-      document.getElementById('displayName').value = localStorage.getItem('workDisplayName') || localStorage.getItem('workAuth_user') || '';
+      document.getElementById('displayName').value = localStorage.getItem('workDisplayName') || '';
 
       const today = new Date().toISOString().split('T')[0];
-      document.getElementById('reportDate').value = today;
-      document.getElementById('diaryDate').value = today;
+      if (!document.getElementById('reportDate').value) document.getElementById('reportDate').value = today;
+      if (!document.getElementById('diaryDate').value) document.getElementById('diaryDate').value = today;
     }
 
     function saveSettings() {
-      localStorage.setItem('workBackendURL', document.getElementById('backendURL').value);
-      localStorage.setItem('workEmployeeID', document.getElementById('employeeID').value);
-      localStorage.setItem('workDisplayName', document.getElementById('displayName').value);
-      showAlert('Settings saved', 'success');
+      localStorage.setItem('workBackendURL', document.getElementById('backendURL').value.trim().replace(/\/$/, ''));
+      showAlert('Backend URL saved', 'success');
     }
 
     // ===== TAB SWITCHING =====
@@ -531,422 +574,475 @@
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
       document.getElementById(tabName).classList.add('active');
-      event.target.closest('.tab').classList.add('active');
+      document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
     }
 
-    // ===== MY DAY =====
-    function loadMyDay() {
-      const assignments = JSON.parse(localStorage.getItem('workMyDay') || '[]');
+    // ===== MY DAY (cache written by refreshFromBackend) =====
+    function renderMyDay() {
+      const cached = JSON.parse(localStorage.getItem('workMyDayCache') || 'null');
       const list = document.getElementById('myDayList');
-
-      if (assignments.length === 0) {
-        list.innerHTML = '<div class="empty">No assignments today. Sync to Backend to refresh.</div>';
+      if (!cached || !cached.stations || cached.stations.length === 0) {
+        list.innerHTML = '<div class="empty">No assignments cached yet. Hit ⬇️ Refresh (backend must be reachable).</div>';
         return;
       }
-
-      list.innerHTML = assignments.map(a => `
+      list.innerHTML = cached.stations.map(st => `
         <div class="card">
-          <div class="card-title">${a.station_name || a.station_code}
-            <span class="badge ${a.duration === 'until_changed' ? 'standing' : a.duration === 'this_week' ? 'week' : 'today'}">
-              ${a.duration === 'until_changed' ? 'Standing' : a.duration === 'this_week' ? 'This week' : 'Today'}
+          <div class="card-title">${escapeHtml(st.station_name || st.station_code)}
+            <span class="badge ${st.duration === 'until_changed' ? 'standing' : st.duration === 'this_week' ? 'week' : 'today'}">
+              ${st.duration === 'until_changed' ? 'Standing' : st.duration === 'this_week' ? 'This week' : 'Today'}
             </span>
           </div>
-          <div class="card-text">Assigned by: ${a.assigned_by || '—'}</div>
-          <div class="card-text" style="margin-top: 6px; font-size: 11px; color: #5a7f9b;">
-            Started: ${a.starts_on || '—'} · Until: ${a.ends_on || 'Open'}
-          </div>
-        </div>
-      `).join('');
-
-      loadFacts();
-    }
-
-    function loadFacts() {
-      const facts = JSON.parse(localStorage.getItem('workFacts') || '[]');
-      const feed = document.getElementById('factsFeed');
-
-      if (facts.length === 0) {
-        feed.innerHTML = '<div class="empty">No facts recorded yet today.</div>';
-        return;
-      }
-
-      feed.innerHTML = facts.map(f => `
-        <div class="card">
-          <div class="card-title">${f.fact_label}</div>
-          <div class="card-text">${f.fact_value} ${f.uom || ''}</div>
-          <div class="card-text" style="font-size: 11px; color: #5a7f9b;">
-            ${f.batch_number || '—'} · ${f.source || 'manual'}
-          </div>
+          <div class="card-text">${escapeHtml(st.area || '')} · ${escapeHtml(st.station_code)}</div>
+          ${(st.tasks && st.tasks.length) ? `<div class="card-text" style="margin-top:6px;">
+            <strong>Tasks:</strong> ${st.tasks.map(t => escapeHtml(t.task_name)).join(', ')}
+          </div>` : ''}
+          ${(st.facts && st.facts.length) ? `<div class="card-text" style="margin-top:6px;">
+            <strong>Facts today:</strong> ${st.facts.map(f => `${escapeHtml(f.fact_label)}: ${escapeHtml(String(f.fact_value))}`).join(', ')}
+          </div>` : ''}
         </div>
       `).join('');
     }
 
     // ===== SELF-REPORT =====
-    function loadReports() {
-      const reports = JSON.parse(localStorage.getItem('workReports') || '{}');
-      const list = document.getElementById('submittedReports');
-      const entries = Object.values(reports).filter(r => r.submitted);
+    function addReadingRow(label, value) {
+      const row = document.createElement('div');
+      row.className = 'reading-row';
+      row.innerHTML = `
+        <input type="text" class="reading-label" placeholder="Label (e.g. pH)" value="${escapeAttr(label || '')}">
+        <input type="text" class="reading-value" placeholder="Value" value="${escapeAttr(value || '')}">
+        <button onclick="this.parentElement.remove()">✕</button>
+      `;
+      document.getElementById('readingRows').appendChild(row);
+    }
 
+    function collectReadings() {
+      const rows = document.querySelectorAll('#readingRows .reading-row');
+      const readings = [];
+      rows.forEach(r => {
+        const label = r.querySelector('.reading-label').value.trim();
+        const value = r.querySelector('.reading-value').value.trim();
+        if (label && value) readings.push({ label, value });
+      });
+      return readings;
+    }
+
+    function reportKey(date, station) {
+      return `workReport_${date}_${station}`;
+    }
+
+    function saveReportLocal(submit) {
+      const date = document.getElementById('reportDate').value;
+      const station = document.getElementById('reportStation').value.trim();
+      if (!station) {
+        showAlert('Enter a station code', 'warning');
+        return null;
+      }
+      const report = {
+        employee_id: localStorage.getItem('workEmployeeID'),
+        report_date: date,
+        station_code: station,
+        batch_number: document.getElementById('reportBatch').value.trim() || null,
+        readings: collectReadings(),
+        remarks: document.getElementById('reportRemarks').value,
+        submit: submit,
+        saved_at: new Date().toISOString(),
+        synced: false,
+      };
+      localStorage.setItem(reportKey(date, station), JSON.stringify(report));
+      queueAdd({ kind: 'report', key: reportKey(date, station) });
+      renderReports();
+      return report;
+    }
+
+    function autosaveReport() {
+      const r = saveReportLocal(false);
+      if (r) showAlert('Saved as draft (queued — hit Sync to send)', 'info');
+    }
+
+    function submitReport() {
+      const r = saveReportLocal(true);
+      if (r) showAlert('Submitted locally — hit 📤 Sync to send to backend', 'success');
+    }
+
+    function renderReports() {
+      const list = document.getElementById('submittedReports');
+      const entries = allLocal('workReport_');
       if (entries.length === 0) {
-        list.innerHTML = '<div class="empty">No submitted reports yet.</div>';
+        list.innerHTML = '<div class="empty">No reports yet.</div>';
         return;
       }
-
-      list.innerHTML = entries.map(r => `
+      list.innerHTML = entries.sort((a, b) => (b.saved_at || '').localeCompare(a.saved_at || '')).map(r => `
         <div class="card">
-          <div class="card-title">${r.station_code} — ${r.report_date}</div>
-          <div class="card-text">Batch: ${r.batch_number || '—'}</div>
-          <div class="card-text" style="margin-top: 6px;">Readings: ${r.readings.length} recorded</div>
-          <div class="card-text" style="margin-top: 4px; font-size: 11px; opacity: 0.7;">
-            Submitted: ${r.submitted_at || 'Yes'}
+          <div class="card-title">${escapeHtml(r.station_code)} — ${escapeHtml(r.report_date)}
+            <span class="badge ${r.submit ? 'matched' : 'pending'}">${r.submit ? 'Submitted' : 'Draft'}</span>
+            ${r.synced ? '<span class="badge standing">Synced</span>' : ''}
           </div>
+          <div class="card-text">Batch: ${escapeHtml(r.batch_number || '—')} · ${r.readings.length} reading(s)</div>
         </div>
       `).join('');
     }
 
-    function autosaveReport() {
-      const reportKey = `workReport_${document.getElementById('reportDate').value}_${document.getElementById('reportStation').value}`;
-      const report = {
-        report_date: document.getElementById('reportDate').value,
-        station_code: document.getElementById('reportStation').value,
-        batch_number: document.getElementById('reportBatch').value || null,
-        readings: tryParseJSON(document.getElementById('reportReadings').value),
-        remarks: document.getElementById('reportRemarks').value,
-        is_draft: true,
-        saved_at: new Date().toISOString(),
-      };
-
-      localStorage.setItem(reportKey, JSON.stringify(report));
-      showAlert('Report saved as draft (autosave)', 'info');
-    }
-
-    function submitReport() {
-      if (!document.getElementById('reportStation').value) {
-        showAlert('Please select a station', 'warning');
-        return;
-      }
-
-      autosaveReport();
-      const reportKey = `workReport_${document.getElementById('reportDate').value}_${document.getElementById('reportStation').value}`;
-      const report = JSON.parse(localStorage.getItem(reportKey));
-      report.is_draft = false;
-      report.submitted_at = new Date().toISOString();
-
-      localStorage.setItem(reportKey, JSON.stringify(report));
-      showAlert('Report submitted! It will sync to Backend when you click Sync.', 'success');
-
-      // Queue for sync
-      let queue = JSON.parse(localStorage.getItem('workSyncQueue') || '[]');
-      queue.push({ type: 'report', data: report, key: reportKey });
-      localStorage.setItem('workSyncQueue', JSON.stringify(queue));
-
-      loadReports();
-    }
-
     // ===== DIARY =====
-    function autosaveDiary() {
-      const diaryKey = `workDiary_${document.getElementById('diaryDate').value}_draft`;
-      const entry = {
-        entry_date: document.getElementById('diaryDate').value,
-        raw_text: document.getElementById('diaryText').value,
-        saved_at: new Date().toISOString(),
-      };
-
-      localStorage.setItem(diaryKey, JSON.stringify(entry));
-      showAlert('Diary saved as draft', 'info');
-    }
-
     function submitDiary() {
-      if (!document.getElementById('diaryText').value.trim()) {
-        showAlert('Please write something first', 'warning');
+      const text = document.getElementById('diaryText').value.trim();
+      if (!text) {
+        showAlert('Write something first', 'warning');
         return;
       }
-
-      const rawText = document.getElementById('diaryText').value;
-      const parsed = parseDiary(rawText);
-
-      const diaryKey = `workDiary_${document.getElementById('diaryDate').value}_${Date.now()}`;
       const entry = {
+        employee_id: localStorage.getItem('workEmployeeID'),
         entry_date: document.getElementById('diaryDate').value,
-        raw_text: rawText,
-        parsed_data: parsed.data,
-        parse_status: parsed.status,
-        parse_notes: parsed.notes,
-        submitted: true,
-        submitted_at: new Date().toISOString(),
+        raw_text: text,
+        parsed_data: [],
+        saved_at: new Date().toISOString(),
+        synced: false,
+        parse_status: null,
       };
-
-      localStorage.setItem(diaryKey, JSON.stringify(entry));
-      showAlert('Diary submitted! Parser feedback: ' + parsed.status, 'success');
-
-      // Queue for sync
-      let queue = JSON.parse(localStorage.getItem('workSyncQueue') || '[]');
-      queue.push({ type: 'diary', data: entry, key: diaryKey });
-      localStorage.setItem('workSyncQueue', JSON.stringify(queue));
-
+      const key = `workDiary_${Date.now()}`;
+      localStorage.setItem(key, JSON.stringify(entry));
+      queueAdd({ kind: 'diary', key });
       document.getElementById('diaryText').value = '';
-      loadDiaryEntries();
+      showAlert('Diary saved locally — hit 📤 Sync to parse & submit', 'success');
+      renderDiary();
     }
 
-    function parseDiary(text) {
-      // Simple deterministic parser — look for patterns
-      const data = [];
-      const notes = [];
-      let status = 'needs_review';
-
-      // Look for batch number (e.g., NEGIN9980200NPH)
-      const batchMatch = text.match(/NE[A-Z0-9]+/i);
-      const batch = batchMatch ? batchMatch[0] : null;
-
-      // Look for simple readings (pH, temp, etc.)
-      const patterns = [
-        { label: 'pH', regex: /pH[:\s]*([0-9.]+)/ },
-        { label: 'Temperature', regex: /temp[:\s]*([0-9.]+)/i },
-        { label: 'Moisture', regex: /moisture[:\s]*([0-9.]+)/i },
-        { label: 'Post_CB', regex: /post.?cb[:\s]*([0-9.]+)/i },
-      ];
-
-      patterns.forEach(p => {
-        const match = text.match(p.regex);
-        if (match) {
-          data.push({ label: p.label, value: parseFloat(match[1]) });
-          status = 'matched';
-        }
-      });
-
-      if (data.length === 0 && batch) {
-        status = 'partial';
-        notes.push('Batch found but no readings matched');
-      } else if (data.length === 0) {
-        notes.push('No structured data could be extracted');
-      }
-
-      return { data, notes: notes.join('; '), status };
-    }
-
-    function loadDiaryEntries() {
-      const entries = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key.startsWith('workDiary_')) {
-          entries.push(JSON.parse(localStorage.getItem(key)));
-        }
-      }
-
+    function renderDiary() {
       const list = document.getElementById('diaryList');
+      const entries = allLocal('workDiary_');
       if (entries.length === 0) {
         list.innerHTML = '<div class="empty">No diary entries yet.</div>';
         return;
       }
-
-      list.innerHTML = entries.sort((a, b) => new Date(b.entry_date) - new Date(a.entry_date)).map(e => `
+      list.innerHTML = entries.sort((a, b) => (b.saved_at || '').localeCompare(a.saved_at || '')).map(e => `
         <div class="card">
-          <div class="card-title">${e.entry_date}
-            <span class="badge ${e.parse_status === 'matched' ? 'success' : e.parse_status === 'partial' ? 'warning' : 'error'}">
-              ${e.parse_status}
-            </span>
+          <div class="card-title">${escapeHtml(e.entry_date)}
+            ${e.parse_status ? `<span class="badge ${e.parse_status}">${e.parse_status}</span>` : '<span class="badge pending">Not synced</span>'}
           </div>
-          <div class="card-text" style="white-space: pre-wrap; max-height: 80px; overflow: hidden; font-size: 11px;">
-            ${e.raw_text.substring(0, 150)}...
-          </div>
-          <div class="card-text" style="margin-top: 6px; font-size: 11px; color: #5a7f9b;">
-            Readings: ${e.parsed_data.length} · ${e.submitted ? '✓ Submitted' : 'Draft'}
-          </div>
+          <div class="card-text" style="max-height: 60px; overflow: hidden;">${escapeHtml(e.raw_text.substring(0, 150))}${e.raw_text.length > 150 ? '…' : ''}</div>
         </div>
       `).join('');
     }
 
     // ===== LEAVE =====
-    function loadLeaveRequests() {
-      const leaves = JSON.parse(localStorage.getItem('workLeaves') || '[]');
-      const list = document.getElementById('leaveList');
-
-      if (leaves.length === 0) {
-        list.innerHTML = '<div class="empty">No leave requests yet.</div>';
-        return;
-      }
-
-      list.innerHTML = leaves.map(l => `
-        <div class="card">
-          <div class="card-title">${l.start_date} to ${l.end_date}</div>
-          <div class="card-text">${l.reason || 'No reason'}</div>
-          <div class="card-text" style="margin-top: 4px; font-size: 11px; color: ${l.status === 'approved' ? '#00e8a2' : l.status === 'rejected' ? '#ff5270' : '#f59e0b'};">
-            Status: ${l.status || 'Pending'}
-          </div>
-        </div>
-      `).join('');
+    async function populateLeaveTypes() {
+      const backend = backendURL();
+      const sel = document.getElementById('leaveType');
+      if (!backend) return;
+      try {
+        const resp = await fetch(`${backend}/api/leave/types`);
+        if (!resp.ok) return;
+        const types = await resp.json();
+        localStorage.setItem('workLeaveTypesCache', JSON.stringify(types));
+        sel.innerHTML = '<option value="">Select…</option>' +
+          types.map(t => `<option value="${escapeAttr(t.code)}">${escapeHtml(t.label)}</option>`).join('');
+      } catch {}
     }
 
     function requestLeave() {
-      const start = document.getElementById('leaveStart').value;
-      const end = document.getElementById('leaveEnd').value;
-      const reason = document.getElementById('leaveReason').value;
+      const backend = backendURL();
+      const type = document.getElementById('leaveType').value;
+      const from = document.getElementById('leaveFrom').value;
+      const to = document.getElementById('leaveTo').value;
+      const half = document.getElementById('leaveHalfDay').checked;
+      const reason = document.getElementById('leaveReason').value.trim();
 
-      if (!start || !end || !reason) {
-        showAlert('Please fill all fields', 'warning');
+      if (!type || !from || !to || !reason) {
+        showAlert('Fill leave type, dates, and reason', 'warning');
         return;
       }
 
       const leave = {
-        start_date: start,
-        end_date: end,
+        employee_id: localStorage.getItem('workEmployeeID'),
+        leave_type_code: type,
+        from_date: from,
+        to_date: to,
+        half_day: half,
         reason: reason,
-        notes: document.getElementById('leaveNotes').value,
-        status: 'pending',
-        created_at: new Date().toISOString(),
+        applied_via: 'work',
+        saved_at: new Date().toISOString(),
+        synced: false,
       };
-
-      let leaves = JSON.parse(localStorage.getItem('workLeaves') || '[]');
-      leaves.push(leave);
-      localStorage.setItem('workLeaves', JSON.stringify(leaves));
-
-      let queue = JSON.parse(localStorage.getItem('workSyncQueue') || '[]');
-      queue.push({ type: 'leave', data: leave });
-      localStorage.setItem('workSyncQueue', JSON.stringify(queue));
-
-      showAlert('Leave request submitted!', 'success');
-      document.getElementById('leaveStart').value = '';
-      document.getElementById('leaveEnd').value = '';
+      const key = `workLeave_${Date.now()}`;
+      localStorage.setItem(key, JSON.stringify(leave));
+      queueAdd({ kind: 'leave', key });
+      showAlert('Leave request queued — hit 📤 Sync to submit', 'success');
+      document.getElementById('leaveFrom').value = '';
+      document.getElementById('leaveTo').value = '';
       document.getElementById('leaveReason').value = '';
-      document.getElementById('leaveNotes').value = '';
-      loadLeaveRequests();
+      renderLeaves();
     }
 
-    // ===== ASSIGN / TASKS =====
-    function loadTasks() {
-      const tasks = JSON.parse(localStorage.getItem('workTasks') || '[]');
-      const list = document.getElementById('taskList');
-
-      if (tasks.length === 0) {
-        list.innerHTML = '<div class="empty">No tasks assigned to you.</div>';
+    function renderLeaves() {
+      const list = document.getElementById('leaveList');
+      const cached = JSON.parse(localStorage.getItem('workLeaveMineCache') || '[]');
+      const pending = allLocal('workLeave_');
+      const combined = [...pending.map(l => ({ ...l, _local: true })), ...cached];
+      if (combined.length === 0) {
+        list.innerHTML = '<div class="empty">No leave requests yet.</div>';
         return;
       }
-
-      list.innerHTML = tasks.map(t => `
+      list.innerHTML = combined.map(l => `
         <div class="card">
-          <div class="card-title">${t.title}</div>
-          <div class="card-text">${t.description || 'No description'}</div>
-          <div class="card-text" style="margin-top: 4px; font-size: 11px; color: #5a7f9b;">
-            From: ${t.from_employee_name || 'Unknown'} · Status: ${t.status || 'new'}
+          <div class="card-title">${escapeHtml(l.from_date)} to ${escapeHtml(l.to_date)}
+            ${l._local ? '<span class="badge pending">Queued</span>' : ''}
           </div>
-          <div style="margin-top: 8px; display: flex; gap: 6px;">
-            <button class="btn btn-sm btn-success" onclick="markTaskDone('${t.id}')">✓ Done</button>
-          </div>
+          <div class="card-text">${escapeHtml(l.leave_type_code || '')} — ${escapeHtml(l.reason || '')}</div>
+          ${l.status ? `<div class="card-text" style="margin-top:4px;">Status: ${escapeHtml(l.status)}</div>` : ''}
         </div>
       `).join('');
     }
 
+    // ===== ASSIGN / TASKS =====
+    async function populateAssignTargets() {
+      const backend = backendURL();
+      const sel = document.getElementById('assignTo');
+      if (!backend) return;
+      try {
+        const resp = await fetch(`${backend}/api/app/users?app_name=work`);
+        if (!resp.ok) return;
+        const users = await resp.json();
+        localStorage.setItem('workUsersCache', JSON.stringify(users));
+        sel.innerHTML = '<option value="">Select…</option>' +
+          users.filter(u => u.employee_id).map(u =>
+            `<option value="${escapeAttr(u.employee_id)}">${escapeHtml(u.name || u.username)}</option>`).join('');
+      } catch {}
+    }
+
     function createAssignment() {
       const to = document.getElementById('assignTo').value;
-      const title = document.getElementById('assignTitle').value;
-      const desc = document.getElementById('assignDesc').value;
+      const title = document.getElementById('assignTitle').value.trim();
+      const desc = document.getElementById('assignDesc').value.trim();
+      const priority = document.getElementById('assignPriority').value;
 
       if (!to || !title) {
-        showAlert('Please fill required fields', 'warning');
+        showAlert('Pick a person and enter a title', 'warning');
         return;
       }
 
       const task = {
-        id: 'task_' + Date.now(),
-        from_employee_id: localStorage.getItem('workEmployeeID'),
-        from_employee_name: localStorage.getItem('workDisplayName'),
-        to_employee_id: to,
-        title: title,
-        description: desc,
-        status: 'new',
-        created_at: new Date().toISOString(),
+        title, description: desc, priority,
+        assigned_to: to,
+        assigned_by: localStorage.getItem('workEmployeeID'),
+        saved_at: new Date().toISOString(),
       };
-
-      let queue = JSON.parse(localStorage.getItem('workSyncQueue') || '[]');
-      queue.push({ type: 'task', data: task });
-      localStorage.setItem('workSyncQueue', JSON.stringify(queue));
-
-      showAlert('Task assigned!', 'success');
-      document.getElementById('assignTo').value = '';
+      const key = `workTaskCreate_${Date.now()}`;
+      localStorage.setItem(key, JSON.stringify(task));
+      queueAdd({ kind: 'task', key });
+      showAlert('Task queued — hit 📤 Sync to assign', 'success');
       document.getElementById('assignTitle').value = '';
       document.getElementById('assignDesc').value = '';
     }
 
-    function markTaskDone(taskId) {
-      // Simple local mark
-      showAlert('Task marked done (will sync to Backend)', 'success');
+    function renderTasks() {
+      const cached = JSON.parse(localStorage.getItem('workTasksMineCache') || '[]');
+      const list = document.getElementById('taskList');
+      if (cached.length === 0) {
+        list.innerHTML = '<div class="empty">Hit ⬇️ Refresh to load tasks assigned to you.</div>';
+        return;
+      }
+      list.innerHTML = cached.map(t => `
+        <div class="card">
+          <div class="card-title">${escapeHtml(t.title)} <span class="badge ${t.status === 'done' ? 'matched' : t.status === 'in_progress' ? 'today' : 'pending'}">${escapeHtml(t.status)}</span></div>
+          <div class="card-text">${escapeHtml(t.description || '')}</div>
+          <div class="card-text" style="margin-top:4px;">From: ${escapeHtml(t.assigned_by || '—')} · Priority: ${escapeHtml(t.priority)}</div>
+          ${t.status !== 'done' ? `<div style="margin-top:8px;"><button class="btn btn-sm btn-success" onclick="setTaskStatus(${t.id}, 'done')">✓ Mark Done</button></div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    async function setTaskStatus(taskId, status) {
+      const backend = backendURL();
+      try {
+        const resp = await fetch(`${backend}/api/tasks/${taskId}/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status, by: localStorage.getItem('workEmployeeID') }),
+        });
+        if (resp.ok) {
+          showAlert('Task updated', 'success');
+          await loadTasksFromBackend();
+          renderTasks();
+        } else {
+          showAlert('Could not update task', 'error');
+        }
+      } catch (e) {
+        showAlert('Connection error: ' + e.message, 'error');
+      }
+    }
+
+    // ===== LOCAL QUEUE =====
+    function queueAdd(item) {
+      const q = JSON.parse(localStorage.getItem('workSyncQueue') || '[]');
+      q.push(item);
+      localStorage.setItem('workSyncQueue', JSON.stringify(q));
+      updateQueueStatus();
+    }
+
+    function updateQueueStatus() {
+      const q = JSON.parse(localStorage.getItem('workSyncQueue') || '[]');
+      document.getElementById('queueStatus').textContent = q.length ? `${q.length} queued` : '';
+    }
+
+    function allLocal(prefix) {
+      const out = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith(prefix)) {
+          try { out.push(JSON.parse(localStorage.getItem(key))); } catch {}
+        }
+      }
+      return out;
     }
 
     // ===== SYNC & REFRESH =====
     async function syncToBackend() {
-      const backendURL = localStorage.getItem('workBackendURL');
-      if (!backendURL) {
-        showAlert('Backend URL not configured. Check Settings.', 'error');
+      const backend = backendURL();
+      if (!backend) {
+        showAlert('Set a Backend URL in ⚙️ Settings first', 'error');
         return;
       }
+      const btn = document.getElementById('syncBtn');
+      btn.disabled = true;
+      setSyncStatus('Syncing…');
 
-      setSyncStatus('Syncing...');
+      const queue = JSON.parse(localStorage.getItem('workSyncQueue') || '[]');
+      let ok = 0, fail = 0;
+      const remaining = [];
 
-      try {
-        const queue = JSON.parse(localStorage.getItem('workSyncQueue') || '[]');
-        const employeeID = localStorage.getItem('workEmployeeID');
-
-        for (const item of queue) {
-          if (item.type === 'report') {
-            await fetch(`${backendURL}/api/work/report`, {
-              method: 'POST',
-              mode: 'no-cors',
-              headers: { 'Content-Type': 'application/json' },
+      for (const item of queue) {
+        try {
+          if (item.kind === 'report') {
+            const r = JSON.parse(localStorage.getItem(item.key) || 'null');
+            if (!r) continue;
+            const resp = await fetch(`${backend}/api/work/report`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                employee_id: employeeID,
-                report_date: item.data.report_date,
-                station_code: item.data.station_code,
-                batch_number: item.data.batch_number,
-                readings: item.data.readings,
-                remarks: item.data.remarks,
-                is_draft: item.data.is_draft,
+                employee_id: r.employee_id, report_date: r.report_date, station_code: r.station_code,
+                batch_number: r.batch_number, readings: r.readings, remarks: r.remarks, submit: r.submit,
               }),
             });
-          } else if (item.type === 'diary') {
-            await fetch(`${backendURL}/api/work/diary`, {
-              method: 'POST',
-              mode: 'no-cors',
-              headers: { 'Content-Type': 'application/json' },
+            if (resp.ok) { r.synced = true; localStorage.setItem(item.key, JSON.stringify(r)); ok++; }
+            else { remaining.push(item); fail++; }
+          } else if (item.kind === 'diary') {
+            const d = JSON.parse(localStorage.getItem(item.key) || 'null');
+            if (!d) continue;
+            const resp = await fetch(`${backend}/api/work/diary`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                employee_id: employeeID,
-                entry_date: item.data.entry_date,
-                raw_text: item.data.raw_text,
-                parsed_data: item.data.parsed_data,
+                employee_id: d.employee_id, entry_date: d.entry_date, raw_text: d.raw_text, parsed_data: [],
               }),
             });
+            if (resp.ok) {
+              const result = await resp.json();
+              d.synced = true; d.parse_status = result.parse_status;
+              localStorage.setItem(item.key, JSON.stringify(d)); ok++;
+            } else { remaining.push(item); fail++; }
+          } else if (item.kind === 'leave') {
+            const l = JSON.parse(localStorage.getItem(item.key) || 'null');
+            if (!l) continue;
+            const resp = await fetch(`${backend}/api/leave/apply`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                employee_id: l.employee_id, leave_type_code: l.leave_type_code,
+                from_date: l.from_date, to_date: l.to_date, half_day: l.half_day,
+                reason: l.reason, applied_via: 'work',
+              }),
+            });
+            if (resp.ok) { localStorage.removeItem(item.key); ok++; }
+            else { remaining.push(item); fail++; }
+          } else if (item.kind === 'task') {
+            const t = JSON.parse(localStorage.getItem(item.key) || 'null');
+            if (!t) continue;
+            const resp = await fetch(`${backend}/api/tasks/create`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                title: t.title, description: t.description, priority: t.priority,
+                assigned_to: t.assigned_to, assigned_by: t.assigned_by,
+              }),
+            });
+            if (resp.ok) { localStorage.removeItem(item.key); ok++; }
+            else { remaining.push(item); fail++; }
           }
+        } catch (e) {
+          remaining.push(item);
+          fail++;
         }
-
-        localStorage.setItem('workSyncQueue', JSON.stringify([]));
-        setSyncStatus('✓ Synced ' + queue.length + ' items');
-        showAlert('Sync complete! ' + queue.length + ' items sent to Backend.', 'success');
-      } catch (e) {
-        setSyncStatus('❌ Sync failed');
-        showAlert('Sync error: ' + e.message, 'error');
       }
+
+      localStorage.setItem('workSyncQueue', JSON.stringify(remaining));
+      updateQueueStatus();
+      renderReports();
+      renderDiary();
+      renderLeaves();
+
+      if (fail === 0 && ok > 0) {
+        setSyncStatus(`✓ Synced ${ok}`);
+        showAlert(`Sync complete: ${ok} item(s) sent`, 'success');
+      } else if (fail > 0) {
+        setSyncStatus(`⚠ ${ok} sent, ${fail} failed`);
+        showAlert(`${ok} sent, ${fail} failed — still queued, retry later` + apiHint(backend), 'warning');
+      } else {
+        setSyncStatus('Nothing to sync');
+      }
+      btn.disabled = false;
+    }
+
+    async function loadTasksFromBackend() {
+      const backend = backendURL();
+      const empId = localStorage.getItem('workEmployeeID');
+      if (!backend || !empId) return;
+      try {
+        const resp = await fetch(`${backend}/api/tasks?assigned_to=${encodeURIComponent(empId)}`);
+        if (resp.ok) {
+          const tasks = await resp.json();
+          localStorage.setItem('workTasksMineCache', JSON.stringify(tasks));
+        }
+      } catch {}
     }
 
     async function refreshFromBackend() {
-      const backendURL = localStorage.getItem('workBackendURL');
-      const employeeID = localStorage.getItem('workEmployeeID');
+      const backend = backendURL();
+      const empId = localStorage.getItem('workEmployeeID');
 
-      if (!backendURL || !employeeID) {
-        showAlert('Backend URL and Employee ID required. Check Settings.', 'error');
+      if (!backend) {
+        showAlert('Set a Backend URL in ⚙️ Settings first', 'error');
+        return;
+      }
+      if (!empId) {
+        showAlert('No Employee ID on file — sign out and sign in again', 'error');
         return;
       }
 
-      setSyncStatus('Refreshing...');
+      const btn = document.getElementById('refreshBtn');
+      btn.disabled = true;
+      setSyncStatus('Refreshing…');
 
       try {
-        const resp = await fetch(`${backendURL}/api/work/myday?employee_id=${employeeID}`);
-        if (!resp.ok) throw new Error('Backend returned ' + resp.status);
+        const today = document.getElementById('reportDate').value || new Date().toISOString().split('T')[0];
 
-        // Note: fetch won't parse no-cors responses, so this is a basic pattern
-        showAlert('Refresh request sent. Check Backend logs.', 'info');
-        setSyncStatus('✓ Refresh initiated');
+        const [myday, leaves] = await Promise.all([
+          fetch(`${backend}/api/work/myday?employee_id=${encodeURIComponent(empId)}&date=${today}`).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(`${backend}/api/leave/mine?employee_id=${encodeURIComponent(empId)}`).then(r => r.ok ? r.json() : null).catch(() => null),
+        ]);
+
+        if (myday) localStorage.setItem('workMyDayCache', JSON.stringify(myday));
+        if (leaves) localStorage.setItem('workLeaveMineCache', JSON.stringify(leaves));
+
+        await populateLeaveTypes();
+        await populateAssignTargets();
+        await loadTasksFromBackend();
+
+        renderMyDay();
+        renderLeaves();
+        renderTasks();
+
+        setSyncStatus('✓ Refreshed');
+        showAlert('Refreshed from backend', 'success');
       } catch (e) {
         setSyncStatus('❌ Refresh failed');
-        showAlert('Refresh error: ' + e.message, 'error');
+        showAlert('Cannot reach backend' + apiHint(backend) + `\n\n(${e.message})`, 'error');
+      } finally {
+        btn.disabled = false;
       }
     }
 
@@ -955,72 +1051,50 @@
     }
 
     // ===== UTILS =====
-    function tryParseJSON(str) {
-      try {
-        return JSON.parse(str || '[]');
-      } catch {
-        return [];
-      }
+    function escapeHtml(v) {
+      if (v === null || v === undefined) return '';
+      return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    function escapeAttr(v) {
+      return escapeHtml(v).replace(/"/g, '&quot;');
     }
 
     function showAlert(msg, type = 'info') {
       const alert = document.createElement('div');
       alert.className = `alert alert-${type}`;
       alert.textContent = msg;
-
       const content = document.querySelector('.content');
       content.insertBefore(alert, content.firstChild);
-
-      setTimeout(() => alert.remove(), 4000);
+      setTimeout(() => alert.remove(), 6000);
     }
 
     function exportData() {
       const data = {};
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key.startsWith('work')) {
-          data[key] = localStorage.getItem(key);
-        }
+        if (key.startsWith('work')) data[key] = localStorage.getItem(key);
       }
-
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = 'work-app-export-' + new Date().toISOString().split('T')[0] + '.json';
       a.click();
+      URL.revokeObjectURL(url);
     }
 
     function clearAllData() {
-      if (!confirm('Clear ALL local data? This cannot be undone.')) return;
-
+      if (!confirm('Clear ALL local data on this device? This cannot be undone.')) return;
       const keys = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        keys.push(localStorage.key(i));
-      }
+      for (let i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));
       keys.filter(k => k.startsWith('work')).forEach(k => localStorage.removeItem(k));
-
-      showAlert('Local data cleared', 'warning');
       location.reload();
-    }
-
-    function updateStorageInfo() {
-      const estimate = navigator.storage?.estimate?.();
-      if (estimate) {
-        estimate.then(({ usage, quota }) => {
-          const mb = (usage / 1024 / 1024).toFixed(1);
-          document.getElementById('storageInfo').textContent = `Using ${mb} MB of ${(quota / 1024 / 1024).toFixed(1)} MB`;
-        });
-      }
     }
 
     // ===== INIT =====
     window.addEventListener('DOMContentLoaded', () => {
-      // Pre-fill backend URL if not set (default to common local IP)
-      if (!localStorage.getItem('workBackendURL')) {
-        localStorage.setItem('workBackendURL', 'http://192.168.1.50:8000');
-      }
-
+      const savedBackend = backendURL();
+      if (savedBackend) document.getElementById('preBackendURL').value = savedBackend;
       checkAuth();
     });
   </script>
