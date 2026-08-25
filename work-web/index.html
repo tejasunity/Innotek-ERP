@@ -129,6 +129,30 @@
     .settings-note { font-size: 11px; color: #7a9bb5; line-height: 1.6; background: #162230;
                      border: 1px solid #2a3f54; border-radius: 4px; padding: 10px; margin-bottom: 16px; }
 
+    /* Admin Dashboard — left-side drawer, same mechanics as Settings but
+       mirrored, per the user's own "left side pull up tab like the existing
+       ERP" preference. Only shown to L7+/L10 (gated client-side, see
+       applyLevelGating()). */
+    .admin-panel { position: fixed; left: -440px; top: 0; width: 440px; max-width: 94vw;
+                   height: 100%; background: #1d2e3f; border-right: 1px solid #2a3f54;
+                   transition: left 0.3s; z-index: 100; overflow-y: auto; }
+    .admin-panel.open { left: 0; }
+    .admin-close { position: absolute; top: 12px; right: 12px; background: none;
+                   border: none; color: #00c2ff; cursor: pointer; font-size: 18px; }
+    .admin-content { padding: 20px; }
+    .admin-tab-bar { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid #2a3f54; }
+    .admin-tab { flex: 1; padding: 8px 4px; text-align: center; cursor: pointer; font-size: 11px;
+                 font-weight: 700; color: #7a9bb5; border-bottom: 2px solid transparent; }
+    .admin-tab.active { color: #00c2ff; border-bottom-color: #00c2ff; }
+    .admin-view { display: none; }
+    .admin-view.active { display: block; }
+    .admin-station-group { margin-bottom: 14px; }
+    .admin-station-group .grp-title { font-size: 12px; font-weight: 700; color: #C9A227;
+                                       text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+    .admin-person-row { font-size: 12px; padding: 5px 8px; background: #0f1923; border-radius: 4px;
+                        margin-bottom: 4px; display: flex; justify-content: space-between; gap: 8px; }
+    .admin-refresh-btn { width: 100%; margin-bottom: 14px; }
+
     @media (max-width: 600px) {
       .tab { font-size: 10px; padding: 10px 4px; }
       .header h1 { font-size: 16px; }
@@ -180,6 +204,7 @@
       <span class="status" id="syncStatus">Ready</span>
       <span class="status" id="queueStatus"></span>
       <div class="spacer"></div>
+      <button onclick="toggleAdminPanel()" id="adminBtn" style="display:none; background: #2a3f54; color: #C9A227;">☰ Admin</button>
       <button onclick="toggleSettings()" style="background: #2a3f54; color: #00c2ff;">⚙️</button>
       <button onclick="handleLogout()" style="background: #2a3f54; color: #00c2ff;">🚪</button>
     </div>
@@ -260,6 +285,15 @@
           <div class="form-group">
             <label>Free-text Entry</label>
             <textarea id="diaryText" placeholder="e.g. Batch NEGIN9980200NPH — POST_CB=7.2, temp=85, moisture=1.1"></textarea>
+          </div>
+
+          <div class="settings-note" style="margin-bottom:16px;">
+            <strong>Quick QC facts get filed automatically</strong> — write one of these and it
+            lands straight in the real QC/Dispatch record, not just this diary:
+            <br>· <code>NFG GRN 2605-001 bag 7 carbon 99.23%</code>
+            <br>· <code>lot 260288 blend 14 sample 2 ph 7.05 moisture 0.31</code>
+            <br>For a full multi-field lab entry, use the real Lab QC / Dispatch Sample form instead —
+            diary is for one fast fact, not the whole test.
           </div>
 
           <button class="btn btn-success" onclick="submitDiary()">✓ Submit &amp; Parse</button>
@@ -348,6 +382,42 @@
           <div class="section-title">Tasks Assigned To Me</div>
           <div id="taskList" class="empty">Hit ⬇️ Refresh to load.</div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard (L7+/L10 only) -->
+  <div class="admin-panel" id="adminPanel">
+    <button class="admin-close" onclick="toggleAdminPanel()">✕</button>
+    <div class="admin-content">
+      <h2 style="margin-bottom:4px;color:#C9A227;">☰ Admin Dashboard</h2>
+      <div style="font-size:11px;color:#7a9bb5;margin-bottom:14px;">Master view — station allotment, all tasks, QC/diary activity</div>
+
+      <div class="admin-tab-bar">
+        <div class="admin-tab active" data-admintab="allotment" onclick="switchAdminTab('allotment')">Allotment</div>
+        <div class="admin-tab" data-admintab="tasks" onclick="switchAdminTab('tasks')">Tasks</div>
+        <div class="admin-tab" data-admintab="feed" onclick="switchAdminTab('feed')">QC / Diary</div>
+      </div>
+
+      <button class="btn btn-secondary admin-refresh-btn" onclick="loadAdminDashboard()">⬇️ Refresh Dashboard</button>
+
+      <!-- Allotment view -->
+      <div class="admin-view active" id="adminAllotment">
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>Date</label>
+          <input type="date" id="adminAllotmentDate" onchange="loadAdminAllotment()">
+        </div>
+        <div id="adminAllotmentList" class="empty">Hit Refresh to load today's roster.</div>
+      </div>
+
+      <!-- Tasks view -->
+      <div class="admin-view" id="adminTasks">
+        <div id="adminTaskList" class="empty">Hit Refresh to load all tasks.</div>
+      </div>
+
+      <!-- QC / Diary feed view -->
+      <div class="admin-view" id="adminFeed">
+        <div id="adminFeedList" class="empty">Hit Refresh to load recent QC/diary activity.</div>
       </div>
     </div>
   </div>
@@ -453,6 +523,7 @@
         localStorage.setItem('workAuth_token', data.token || '');
         localStorage.setItem('workEmployeeID', data.employee_id || '');
         localStorage.setItem('workDisplayName', data.name || username);
+        localStorage.setItem('workLevelNum', data.level_num || 0);
 
         if (data.must_change_password) {
           document.getElementById('authModal').classList.remove('active');
@@ -538,12 +609,20 @@
       renderLeaves();
       renderTasks();
       updateQueueStatus();
+      applyLevelGating();
       if (document.getElementById('readingRows').children.length === 0) addReadingRow();
       // Show cached data instantly, then quietly pull anything new (My Day,
       // tasks assigned since last visit, leave status) without making the
       // user know the Refresh button exists. Silent — a failure here just
       // means they're offline and still see their last-known data.
       refreshFromBackend({ silent: true });
+    }
+
+    // Shows/hides modules by the logged-in person's level. Only one gate
+    // today (Admin Dashboard, L7+) but written to take more without a rewrite.
+    function applyLevelGating() {
+      const levelNum = parseInt(localStorage.getItem('workLevelNum') || '0', 10);
+      document.getElementById('adminBtn').style.display = levelNum >= 7 ? '' : 'none';
     }
 
     // ===== SETTINGS =====
@@ -559,6 +638,7 @@
       const today = new Date().toISOString().split('T')[0];
       if (!document.getElementById('reportDate').value) document.getElementById('reportDate').value = today;
       if (!document.getElementById('diaryDate').value) document.getElementById('diaryDate').value = today;
+      if (!document.getElementById('adminAllotmentDate').value) document.getElementById('adminAllotmentDate').value = today;
     }
 
     function saveSettings() {
@@ -579,6 +659,142 @@
       document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
       document.getElementById(tabName).classList.add('active');
       document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+    }
+
+    // ===== ADMIN DASHBOARD (L7+/L10 only) =====
+    function toggleAdminPanel() {
+      const panel = document.getElementById('adminPanel');
+      panel.classList.toggle('open');
+      if (panel.classList.contains('open') && document.getElementById('adminAllotmentList').classList.contains('empty')) {
+        loadAdminDashboard();
+      }
+    }
+
+    function switchAdminTab(name) {
+      document.querySelectorAll('.admin-view').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('active'));
+      document.getElementById('admin' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+      document.querySelector(`.admin-tab[data-admintab="${name}"]`).classList.add('active');
+    }
+
+    async function loadAdminDashboard() {
+      await Promise.all([loadAdminAllotment(), loadAdminTasks(), loadAdminFeed()]);
+    }
+
+    async function loadAdminAllotment() {
+      const backend = backendURL();
+      const list = document.getElementById('adminAllotmentList');
+      const date = document.getElementById('adminAllotmentDate').value || new Date().toISOString().split('T')[0];
+      list.innerHTML = '<div class="empty">Loading…</div>';
+      try {
+        const resp = await fetch(`${backend}/api/roster/assignments?date=${date}`);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const data = await resp.json();
+        renderAdminAllotment(data.assignments || []);
+      } catch (e) {
+        list.innerHTML = `<div class="empty">Could not load — ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    function renderAdminAllotment(assignments) {
+      const list = document.getElementById('adminAllotmentList');
+      if (!assignments.length) {
+        list.innerHTML = '<div class="empty">No standing assignments open on this date.</div>';
+        return;
+      }
+      const byArea = {};
+      assignments.forEach(a => {
+        const key = `${a.area || '—'} · ${a.station_name || a.station_code}`;
+        (byArea[key] = byArea[key] || []).push(a);
+      });
+      list.innerHTML = Object.keys(byArea).sort().map(key => `
+        <div class="admin-station-group">
+          <div class="grp-title">${escapeHtml(key)}</div>
+          ${byArea[key].map(a => `
+            <div class="admin-person-row">
+              <span>${escapeHtml(a.employee_name)} (${escapeHtml(a.level || '—')})${a.role ? ' · ' + escapeHtml(a.role) : ''}</span>
+              <span class="badge ${a.duration === 'until_changed' ? 'matched' : a.duration === 'this_week' ? 'today' : 'partial'}">${escapeHtml((a.duration || '').replace('_', ' '))}</span>
+            </div>
+          `).join('')}
+        </div>
+      `).join('');
+    }
+
+    async function loadAdminTasks() {
+      const backend = backendURL();
+      const list = document.getElementById('adminTaskList');
+      list.innerHTML = '<div class="empty">Loading…</div>';
+      try {
+        const resp = await fetch(`${backend}/api/tasks`);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        renderAdminTasks(await resp.json());
+      } catch (e) {
+        list.innerHTML = `<div class="empty">Could not load — ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    function renderAdminTasks(tasks) {
+      const list = document.getElementById('adminTaskList');
+      if (!tasks.length) {
+        list.innerHTML = '<div class="empty">No tasks yet.</div>';
+        return;
+      }
+      list.innerHTML = tasks.map(t => `
+        <div class="card">
+          <div class="card-title">${escapeHtml(t.title)}
+            <span class="badge ${t.status === 'done' ? 'matched' : t.status === 'in_progress' ? 'today' : 'partial'}">${escapeHtml(t.status)}</span>
+          </div>
+          <div class="card-text">${escapeHtml(t.description || '')}</div>
+          <div class="card-text" style="margin-top:4px;font-size:11px;color:#7a9bb5;">
+            ${escapeHtml(t.assigned_by_name || t.assigned_by || '—')} → ${escapeHtml(t.assigned_to_name || t.assigned_to)}
+            ${t.station_name ? ' · ' + escapeHtml(t.station_name) : ''} · ${escapeHtml(t.priority)}
+            · ${new Date(t.created_at).toLocaleDateString()}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function loadAdminFeed() {
+      const backend = backendURL();
+      const list = document.getElementById('adminFeedList');
+      list.innerHTML = '<div class="empty">Loading…</div>';
+      try {
+        const [diaryResp, qcResp] = await Promise.all([
+          fetch(`${backend}/api/work/diary`),
+          fetch(`${backend}/api/qc/tests`).catch(() => null),
+        ]);
+        const diary = diaryResp.ok ? await diaryResp.json() : [];
+        const qc = (qcResp && qcResp.ok) ? await qcResp.json() : [];
+        renderAdminFeed(diary, qc);
+      } catch (e) {
+        list.innerHTML = `<div class="empty">Could not load — ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    function renderAdminFeed(diaryEntries, qcTests) {
+      const list = document.getElementById('adminFeedList');
+      const items = [];
+      diaryEntries.forEach(d => items.push({
+        ts: d.created_at, kind: 'diary', who: d.employee_name,
+        html: `<div class="card-text" style="max-height:50px;overflow:hidden;">${escapeHtml(d.raw_text.substring(0, 140))}</div>${renderDiaryBridgeItems(d.parsed_data)}`,
+      }));
+      (qcTests || []).slice(0, 100).forEach(q => items.push({
+        ts: q.created_at, kind: 'qc', who: q.tester,
+        html: `<div class="card-text">${escapeHtml(q.qc_type || '')} ${escapeHtml(q.ref || '')} — ${escapeHtml(q.result || 'Pending')}${q.carbon_pct != null ? ' · Carbon ' + q.carbon_pct + '%' : ''}${q.ph != null ? ' · pH ' + q.ph : ''}</div>`,
+      }));
+      if (!items.length) {
+        list.innerHTML = '<div class="empty">Nothing recorded yet.</div>';
+        return;
+      }
+      items.sort((a, b) => (b.ts || '').localeCompare(a.ts || ''));
+      list.innerHTML = items.slice(0, 80).map(it => `
+        <div class="card">
+          <div class="card-title">${it.kind === 'diary' ? '📓' : '🧪'} ${escapeHtml(it.who || '—')}
+            <span style="font-size:10px;color:#7a9bb5;font-weight:400;">${it.ts ? new Date(it.ts).toLocaleString() : ''}</span>
+          </div>
+          ${it.html}
+        </div>
+      `).join('');
     }
 
     // ===== MY DAY (cache written by refreshFromBackend) =====
@@ -723,8 +939,32 @@
             ${e.parse_status ? `<span class="badge ${e.parse_status}">${e.parse_status}</span>` : '<span class="badge pending">Not synced</span>'}
           </div>
           <div class="card-text" style="max-height: 60px; overflow: hidden;">${escapeHtml(e.raw_text.substring(0, 150))}${e.raw_text.length > 150 ? '…' : ''}</div>
+          ${renderDiaryBridgeItems(e.parsed_data)}
         </div>
       `).join('');
+    }
+
+    // Shows what the GRN-bag / dispatch-sample bridges actually did with this
+    // note (see backend _parse_diary) — filed successfully, or exactly why not.
+    function renderDiaryBridgeItems(parsedData) {
+      if (!parsedData || !parsedData.length) return '';
+      return parsedData.map(item => {
+        if (item.type === 'grn_qc') {
+          const cls = item.written ? 'matched' : 'partial';
+          return `<div class="card-text" style="margin-top:6px;padding:6px 8px;background:#0f1923;border-radius:4px;">
+            <span class="badge ${cls}">${item.written ? '✓ filed' : '⚠ not filed'}</span>
+            GRN ${escapeHtml(item.grn_no)} · bag ${escapeHtml(item.bag_no)} — ${escapeHtml(item.detail)}
+          </div>`;
+        }
+        if (item.type === 'dispatch_sample') {
+          const cls = item.written ? 'matched' : 'partial';
+          return `<div class="card-text" style="margin-top:6px;padding:6px 8px;background:#0f1923;border-radius:4px;">
+            <span class="badge ${cls}">${item.written ? '✓ filed' : '⚠ not filed'}</span>
+            Lot ${escapeHtml(item.lot_no)} · blend ${item.blend_num} · sample ${item.sample_num} — ${escapeHtml(item.detail)}
+          </div>`;
+        }
+        return '';
+      }).join('');
     }
 
     // ===== LEAVE =====
@@ -939,6 +1179,7 @@
             if (resp.ok) {
               const result = await resp.json();
               d.synced = true; d.parse_status = result.parse_status;
+              d.parsed_data = result.parsed_data || []; d.parse_notes = result.notes || '';
               localStorage.setItem(item.key, JSON.stringify(d)); ok++;
             } else { remaining.push(item); fail++; }
           } else if (item.kind === 'leave') {
