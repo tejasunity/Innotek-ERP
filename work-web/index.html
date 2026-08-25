@@ -539,6 +539,11 @@
       renderTasks();
       updateQueueStatus();
       if (document.getElementById('readingRows').children.length === 0) addReadingRow();
+      // Show cached data instantly, then quietly pull anything new (My Day,
+      // tasks assigned since last visit, leave status) without making the
+      // user know the Refresh button exists. Silent — a failure here just
+      // means they're offline and still see their last-known data.
+      refreshFromBackend({ silent: true });
     }
 
     // ===== SETTINGS =====
@@ -999,21 +1004,22 @@
       } catch {}
     }
 
-    async function refreshFromBackend() {
+    async function refreshFromBackend(opts) {
+      const silent = !!(opts && opts.silent);
       const backend = backendURL();
       const empId = localStorage.getItem('workEmployeeID');
 
       if (!backend) {
-        showAlert('Set a Backend URL in ⚙️ Settings first', 'error');
+        if (!silent) showAlert('Set a Backend URL in ⚙️ Settings first', 'error');
         return;
       }
       if (!empId) {
-        showAlert('No Employee ID on file — sign out and sign in again', 'error');
+        if (!silent) showAlert('No Employee ID on file — sign out and sign in again', 'error');
         return;
       }
 
       const btn = document.getElementById('refreshBtn');
-      btn.disabled = true;
+      if (!silent) btn.disabled = true;
       setSyncStatus('Refreshing…');
 
       try {
@@ -1036,12 +1042,12 @@
         renderTasks();
 
         setSyncStatus('✓ Refreshed');
-        showAlert('Refreshed from backend', 'success');
+        if (!silent) showAlert('Refreshed from backend', 'success');
       } catch (e) {
-        setSyncStatus('❌ Refresh failed');
-        showAlert('Cannot reach backend' + apiHint(backend) + `\n\n(${e.message})`, 'error');
+        setSyncStatus(silent ? '' : '❌ Refresh failed');
+        if (!silent) showAlert('Cannot reach backend' + apiHint(backend) + `\n\n(${e.message})`, 'error');
       } finally {
-        btn.disabled = false;
+        if (!silent) btn.disabled = false;
       }
     }
 
