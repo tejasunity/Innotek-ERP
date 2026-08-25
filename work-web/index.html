@@ -145,13 +145,6 @@
       <h1>Innotek ERP WorkApp</h1>
       <div class="subtitle">Sign in with your App Control account</div>
 
-      <div id="preLoginBackend">
-        <div class="form-group" style="margin-bottom: 8px;">
-          <label style="font-size: 11px;">Backend URL (pre-filled — only change if your admin says to)</label>
-          <input type="text" id="preBackendURL" placeholder="https://api.innotekproducts.com">
-        </div>
-      </div>
-
       <input type="text" id="authUsername" placeholder="Username" autocomplete="username">
       <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password">
       <button id="authBtn" onclick="handleAuth()">Sign In</button>
@@ -401,10 +394,14 @@
     // Public HTTPS address for the backend (Cloudflare tunnel -> Docker "api"
     // service, see innotek-platform/docker-compose.yml). Reachable from any
     // network — home WiFi, office, factory, mobile data — no LAN IP needed.
+    // Fixed, not shown on screen, not user-editable: a device that had an
+    // earlier (wrong) address cached under the old 'workBackendURL' key must
+    // never keep using it — hence a new key name here, and only an explicit
+    // Settings override (workBackendURL_manual, set after login) can beat it.
     const DEFAULT_BACKEND_URL = 'https://api.innotekproducts.com';
 
     function backendURL() {
-      return localStorage.getItem('workBackendURL') || DEFAULT_BACKEND_URL;
+      return localStorage.getItem('workBackendURL_manual') || DEFAULT_BACKEND_URL;
     }
 
     function apiHint(backend) {
@@ -423,13 +420,11 @@
     async function handleAuth() {
       const username = document.getElementById('authUsername').value.trim();
       const password = document.getElementById('authPassword').value;
-      const preUrl = document.getElementById('preBackendURL').value.trim().replace(/\/$/, '');
-      if (preUrl) localStorage.setItem('workBackendURL', preUrl);
       const backend = backendURL();
       const btn = document.getElementById('authBtn');
 
       if (!backend) {
-        document.getElementById('authError').textContent = 'Enter the Backend URL above first (ask your admin).';
+        document.getElementById('authError').textContent = 'Backend not configured — contact your admin.';
         return;
       }
       if (!username || !password) {
@@ -562,7 +557,14 @@
     }
 
     function saveSettings() {
-      localStorage.setItem('workBackendURL', document.getElementById('backendURL').value.trim().replace(/\/$/, ''));
+      const v = document.getElementById('backendURL').value.trim().replace(/\/$/, '');
+      // Empty, or back to the default -> clear the override so future default
+      // changes (e.g. a new server address) take effect automatically again.
+      if (!v || v === DEFAULT_BACKEND_URL) {
+        localStorage.removeItem('workBackendURL_manual');
+      } else {
+        localStorage.setItem('workBackendURL_manual', v);
+      }
       showAlert('Backend URL saved', 'success');
     }
 
@@ -1090,7 +1092,9 @@
 
     // ===== INIT =====
     window.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('preBackendURL').value = backendURL();
+      // One-time cleanup: discard any address cached under the old key name
+      // from before this URL was hidden, so no device stays stuck on it.
+      localStorage.removeItem('workBackendURL');
       checkAuth();
     });
   </script>
